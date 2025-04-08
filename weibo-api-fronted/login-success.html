@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>登录成功</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #43e97b, #38f9d7);
+      font-family: "Helvetica Neue", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background-color: white;
+      padding: 40px 60px;
+      border-radius: 16px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      margin-bottom: 20px;
+      border: 3px solid #38f9d7;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    .profile-btn {
+      background-color: #38f9d7;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .profile-btn:hover {
+      background-color: #2dd1b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="" id="avatar" class="avatar" alt="用户头像">
+    <h2 id="nickname">微博昵称</h2>
+    <p>欢迎您，登录成功 🎉</p>
+    <a href="#" id="profileLink" class="profile-btn">查看个人主页</a>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const screenName = params.get("screen_name") || "未命名用户";
+    const avatarUrl = params.get("avatar_url") || "https://tvax3.sinaimg.cn/default_avatar.png";
+    const weiboUid = params.get("weibo_uid");
+    const accessToken = params.get("access_token");
+
+    document.getElementById("nickname").textContent = decodeURIComponent(screenName);
+    document.getElementById("avatar").src = decodeURIComponent(avatarUrl);
+
+    if (weiboUid) {
+        if (accessToken) {
+            localStorage.setItem('weibo_access_token', accessToken);
+        }
+        
+        document.getElementById("profileLink").href = `user-profile.html?weibo_uid=${weiboUid}&access_token=${accessToken}`;
+    }
+  </script>
+</body>
+</html>

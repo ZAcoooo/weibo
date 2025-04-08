@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>微博授权登录</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #fa709a, #fee140);
+      font-family: "Helvetica Neue", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background-color: white;
+      padding: 40px 60px;
+      border-radius: 16px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .login-btn {
+      background-color: #e6162d;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .login-btn:hover {
+      background-color: #c81428;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>欢迎使用微博授权登录</h2>
+    <button class="login-btn" onclick="loginWeibo()">微博一键登录</button>
+  </div>
+
+  <script>
+    function loginWeibo() {
+      const clientId = '3273673961'; // AppKey
+      const redirectUri = encodeURIComponent('https://api.weibo.com/oauth2/default.html'); // 回调地址
+      const authUrl = `https://api.weibo.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}`;
+      window.location.href = authUrl;
+    }
+  </script>
+</body>
+</html>

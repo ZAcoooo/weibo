@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>个人主页</title>
+    <style>
+        body {
+            background: linear-gradient(to right, #43e97b, #38f9d7);
+            font-family: "Helvetica Neue", sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .profile-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .user-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-right: 20px;
+            border: 3px solid #38f9d7;
+        }
+
+        .user-info {
+            flex-grow: 1;
+        }
+
+        .weibo-list {
+            background-color: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .weibo-item {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .weibo-item p {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .weibo-item:hover {
+            background-color: #f8f8f8;
+        }
+
+        #description {
+            color: #666;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .error-message {
+            color: red;
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pagination button:hover {
+            background-color: #f0f0f0;
+        }
+
+        .pagination button:disabled {
+            background-color: #eee;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            line-height: 35px;
+            color: #666;
+        }
+
+        .comment-btn {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .comment-btn:hover {
+            background-color: #357abd;
+        }
+
+        .comments-section {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .comment-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .comment-item:last-child {
+            border-bottom: none;
+        }
+
+        .comment-content {
+            margin: 5px 0;
+        }
+
+        .comment-meta {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .comment-form {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 8px;
+        }
+
+        .comment-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .submit-comment-btn {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .submit-comment-btn:hover {
+            background-color: #357abd;
+        }
+
+        .submit-comment-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <div class="user-card">
+            <img src="" id="avatar" class="avatar" alt="用户头像">
+            <div class="user-info">
+                <h2 id="nickname">加载中...</h2>
+                <p id="description">加载中...</p>
+            </div>
+        </div>
+
+        <div class="weibo-list" id="weiboList">
+            <!-- 微博列表将通过 JavaScript 动态加载 -->
+        </div>
+
+        <div class="pagination" id="pagination">
+            <button id="prevPage" onclick="changePage(-1)">上一页</button>
+            <span class="page-info" id="pageInfo">第 1 页</span>
+            <button id="nextPage" onclick="changePage(1)">下一页</button>
+        </div>
+
+        <div class="loading" id="loading">
+            加载中...
+        </div>
+
+        <div class="error-message" id="error">
+            加载失败，请稍后重试
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const pageSize = 20; // 每页显示的微博数量
+        let totalWeibos = 0;
+        let userAccessToken = ''; // 存储用户的accessToken
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            const weiboUid = params.get('weibo_uid');
+            const accessToken = params.get('access_token'); // 从URL参数获取accessToken
+            
+            if (!weiboUid) {
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = '未找到用户ID';
+                return;
+            }
+
+            if (accessToken) {
+                userAccessToken = accessToken;
+            } else {
+                // 尝试从localStorage获取accessToken
+                userAccessToken = localStorage.getItem('weibo_access_token');
+            }
+
+            loadUserInfo(weiboUid);
+        });
+
+        async function loadUserInfo(weiboUid) {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                
+                // 获取用户基本信息
+                const userResponse = await fetch(`http://localhost:8080/api/user/${weiboUid}`);
+                if (!userResponse.ok) {
+                    throw new Error('获取用户信息失败');
+                }
+
+                const userData = await userResponse.json();
+                
+                // 更新用户信息
+                document.getElementById('avatar').src = userData.avatarUrl || 'https://tvax3.sinaimg.cn/default_avatar.png';
+                document.getElementById('nickname').textContent = userData.screenName || '未知用户';
+                document.getElementById('description').textContent = `用户ID: ${userData.weiboUid} · 加入时间: ${new Date(userData.createdAt).toLocaleDateString()}`;
+                
+                // 加载第一页微博
+                await loadWeibos(weiboUid);
+
+            } catch (error) {
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = error.message;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function loadWeibos(weiboUid) {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                
+                const timestamp = new Date().getTime();
+                const response = await fetch(`http://localhost:8080/api/post/${weiboUid}?page=${currentPage}&count=${pageSize}&_=${timestamp}`);
+                if (!response.ok) {
+                    throw new Error('获取微博列表失败');
+                }
+
+                const weibos = await response.json();
+                
+                if (weibos && weibos.length > 0) {
+                    const weiboListHtml = weibos.map(weibo => `
+                        <div class="weibo-item">
+                            <p>${weibo.content}</p>
+                            <div style="display: flex; justify-content: space-between; color: #666; font-size: 14px;">
+                                <span>微博ID: ${weibo.weiboId}</span>
+                                <span>发布时间: ${new Date(weibo.createdAt).toLocaleString()}</span>
+                            </div>
+                            <div style="margin-top: 10px;">
+                                <button class="comment-btn" onclick="toggleComments(${weibo.weiboId})">查看评论</button>
+                            </div>
+                            <div class="comments-section" id="comments-${weibo.weiboId}">
+                                <div class="comment-form">
+                                    <textarea class="comment-input" id="comment-input-${weibo.weiboId}" placeholder="写下你的评论..."></textarea>
+                                    <button class="submit-comment-btn" onclick="submitComment(${weibo.weiboId})">发表评论</button>
+                                </div>
+                                <div id="comment-list-${weibo.weiboId}">
+                                    <!-- 评论列表将通过JavaScript动态加载 -->
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('weiboList').innerHTML = weiboListHtml;
+                    
+                    // 更新分页信息
+                    updatePagination(weibos.length);
+                } else {
+                    document.getElementById('weiboList').innerHTML = '<p style="text-align: center">暂无微博</p>';
+                    document.getElementById('pagination').style.display = 'none';
+                }
+
+            } catch (error) {
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = error.message;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function updatePagination(currentPageSize) {
+            const prevButton = document.getElementById('prevPage');
+            const nextButton = document.getElementById('nextPage');
+            const pageInfo = document.getElementById('pageInfo');
+
+            // 更新页码信息
+            pageInfo.textContent = `第 ${currentPage} 页`;
+
+            // 更新按钮状态
+            prevButton.disabled = currentPage === 1;
+            nextButton.disabled = currentPageSize < pageSize; // 如果当前页的数据少于页大小，说明是最后一页
+        }
+
+        async function changePage(delta) {
+            const weiboUid = new URLSearchParams(window.location.search).get('weibo_uid');
+            currentPage += delta;
+            await loadWeibos(weiboUid);
+            
+            // 滚动到页面顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function toggleComments(weiboId) {
+            const commentsSection = document.getElementById(`comments-${weiboId}`);
+            const commentBtn = commentsSection.previousElementSibling.querySelector('.comment-btn');
+            const commentList = document.getElementById(`comment-list-${weiboId}`);
+            
+            if (commentsSection.style.display === 'block') {
+                commentsSection.style.display = 'none';
+                commentBtn.textContent = '查看评论';
+                return;
+            }
+
+            try {
+                commentsSection.style.display = 'block';
+                commentBtn.textContent = '加载中...';
+                commentList.innerHTML = '<p>加载评论中...</p>';
+
+                const response = await fetch(`http://localhost:8080/api/comment/${weiboId}?count=10&page=1`);
+                if (!response.ok) {
+                    throw new Error('获取评论失败');
+                }
+
+                const comments = await response.json();
+                
+                if (comments && comments.length > 0) {
+                    const commentsHtml = comments.map(comment => `
+                        <div class="comment-item">
+                            <div class="comment-content">${comment.content}</div>
+                            <div class="comment-meta">
+                                <span>评论人UID: ${comment.weiboUid || '未知用户'}</span>
+                                <span style="margin-left: 10px;">评论时间: ${new Date(comment.createdAt).toLocaleString()}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    commentList.innerHTML = commentsHtml;
+                    commentBtn.textContent = '收起评论';
+                } else {
+                    commentList.innerHTML = '<p style="text-align: center">暂无评论</p>';
+                    commentBtn.textContent = '查看评论';
+                }
+            } catch (error) {
+                commentList.innerHTML = `<p style="color: red;">加载评论失败: ${error.message}</p>`;
+                commentBtn.textContent = '查看评论';
+            }
+        }
+
+        async function submitComment(weiboId) {
+            const commentInput = document.getElementById(`comment-input-${weiboId}`);
+            const submitBtn = commentInput.nextElementSibling;
+            const commentList = document.getElementById(`comment-list-${weiboId}`);
+            
+            const content = commentInput.value.trim();
+            if (!content) {
+                alert('请输入评论内容');
+                return;
+            }
+
+            if (!userAccessToken) {
+                alert('请先登录后再发表评论');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = '发表中...';
+
+                const response = await fetch('http://localhost:8080/api/comment/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        weiboId: weiboId,
+                        content: content,
+                        accessToken: userAccessToken
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('发表评论失败');
+                }
+
+                // 清空输入框
+                commentInput.value = '';
+                
+                // 重新加载评论列表
+                await toggleComments(weiboId);
+                
+                alert('评论发表成功！');
+            } catch (error) {
+                alert('发表评论失败: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '发表评论';
+            }
+        }
+    </script>
+</body>
+</html> 
